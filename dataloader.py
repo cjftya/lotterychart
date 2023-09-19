@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 class DataLoader:
     def __init__(self):
@@ -72,7 +73,7 @@ class DataLoader:
         return [postIndexSet, posArrSet]
     
 
-    def draw(self, selectedNum):
+    def draw(self, selectedNum, isSave=False, isShow=True):
         if len(self.numberDataArray) == 0:
             print("empty data")
 
@@ -104,11 +105,21 @@ class DataLoader:
         plt.title("Pos " + str(selectedNum))
 
         plt.tight_layout()
-        # figure = plt.gcf() # get current figure
-        # figure.set_size_inches(15, 10)
-        # plt.savefig("figure/pic" + str(selectedNum) + ".png", dpi=100, bbox_inches='tight')
-        # plt.clf()
-        plt.show()
+        if isSave:
+            dirName = "figure"
+            if not os.path.exists(dirName):
+                os.mkdir(dirName)
+            # else:
+            #     print("already exist")
+
+            figure = plt.gcf() # get current figure
+            figure.set_size_inches(15, 10)
+            plt.savefig(dirName + "/pic" + str(selectedNum) + ".png", dpi=100, bbox_inches='tight')
+
+        if isShow:
+            plt.show()
+
+        plt.clf()
 
 
     def printData(self, selectedNum):

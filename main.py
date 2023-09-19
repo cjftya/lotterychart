@@ -1,6 +1,3 @@
-from prophet import Prophet
-from prophet.plot import add_changepoints_to_plot
-
 from dataloader import DataLoader
 
 dataLoader = DataLoader()
