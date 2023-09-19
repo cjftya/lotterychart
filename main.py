@@ -6,6 +6,6 @@ from dataloader import DataLoader
 dataLoader = DataLoader()
 
 if __name__ == "__main__":
-    dataLoader.load(2)
-    # for i in range(1, 46):
-    #     dataLoader.load(i)
+    dataLoader.loadAll()
+    dataLoader.printData(2)
+    dataLoader.draw(2)

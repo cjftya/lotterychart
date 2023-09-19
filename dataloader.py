@@ -5,90 +5,100 @@ class DataLoader:
     def __init__(self):
         data = pd.read_csv("lottodata.csv", encoding="cp949")
         self.result = data.iloc[:,0:8]
+        self.numberDataArray = dict()
         print("init")
-    
-    def load(self, selectNum):
-        fullArr = []
-        fullIndex = []
+
+
+    def getNormalData(self, originArr):
         arr = []
         index = []
-        size = len(self.result) - 1
-        selectedNum = selectNum
-        for i in range(size-0, -1, -1):
-            fd = self.findPosition(self.result.iloc[i,:], selectedNum)
-            fullArr.append(fd)
-            fullIndex.append(self.result.iloc[i,0])
-
-            if fd == 0:
+        size = len(originArr[1])
+        for i in range(size):
+            if originArr[1][i] == 0:
                 continue
-            arr.append(fd)
-            index.append(self.result.iloc[i,0])
+            index.append(originArr[0][i])
+            arr.append(originArr[1][i])
+        return [index, arr]
 
 
-        densitySlidingSize = 50
-        halfDensitySlidingSize = densitySlidingSize / 2
-        densityIndex = []
-        densityArr = []
-        for i in range(0, len(fullArr)):
+    def getDensityData(self, originArr, sildingSize):
+        arr = []
+        index = []
+        size = len(originArr[1])
+        halfSlidingSize = sildingSize / 2
+        for i in range(size):
             acc = 0
-            start = int(i - halfDensitySlidingSize)
+            start = int(i - halfSlidingSize)
             start = start if start >= 0 else 0
-            end = int(i + halfDensitySlidingSize)
-            end = end if end < len(fullArr) else len(fullArr)
+            end = int(i + halfSlidingSize)
+            end = end if end < size else size
             for k in range(start, end):
-                if fullArr[k] != 0:
+                if originArr[1][k] != 0:
                     if k < i:
                         acc += 1
                     else:
                         acc += 2
 
-            densityArr.append((acc * 100) / densitySlidingSize)
-            densityIndex.append(fullIndex[i])
+            arr.append((acc * 100) / sildingSize)
+            index.append(originArr[0][i])
 
-        
+        return [index, arr]
+    
+
+    def getPositionDensityData(self, originArr, sildingSize):
         posArrSet = []
         postIndexSet = []
-        posSlidingSize = 300
-        halfPosSlidingSize = int(posSlidingSize / 2)
+        size = len(originArr[1])
+        halfSlidingSize = sildingSize / 2
         for p in range(6):
             posIndex = []
             posArr = []
-            for i in range(0, len(fullArr)):
+            for i in range(size):
                 acc = 0
-                start = int(i - halfPosSlidingSize)
+                start = int(i - halfSlidingSize)
                 start = start if start >= 0 else 0
-                end = int(i + halfPosSlidingSize)
-                end = end if end < len(fullArr) else len(fullArr)
+                end = int(i + halfSlidingSize)
+                end = end if end < size else size
                 for k in range(start, end):
-                    if fullArr[k] == p + 1:
+                    if originArr[1][k] == p + 1:
                         acc += 1
 
-                posArr.append((acc * 100) / posSlidingSize)
-                posIndex.append(fullIndex[i])
+                posArr.append((acc * 100) / sildingSize)
+                posIndex.append(originArr[0][i])
 
             posArrSet.append(posArr)
             postIndexSet.append(posIndex)
 
+        return [postIndexSet, posArrSet]
+    
 
+    def draw(self, selectedNum):
+        if len(self.numberDataArray) == 0:
+            print("empty data")
+
+        data = self.numberDataArray[selectedNum]
+        normalData = data["normal"]
+        densityData = data["density"]
+        posDensityData = data["pos"]
         plt.subplot(3, 1, 1)
-        plt.plot(index, arr, "b.-")
+        plt.plot(normalData[0], normalData[1], "b.-")
         plt.grid(True)
         plt.tick_params(axis='both', direction='in', length=3, pad=3)
         plt.title("Confirm " + str(selectedNum))
 
         plt.subplot(3, 1, 2)
-        plt.plot(densityIndex, densityArr, "b.-")
+        plt.plot(densityData[0], densityData[1], "b.-")
         plt.grid(True)
         plt.tick_params(axis='both', direction='in', length=3, pad=3)
         plt.title("Density " + str(selectedNum))
 
         plt.subplot(3, 1, 3)
-        plt.plot(postIndexSet[0], posArrSet[0], "b.-", 
-                 postIndexSet[1], posArrSet[1], "r.-",
-                 postIndexSet[2], posArrSet[2], "g.-",
-                 postIndexSet[3], posArrSet[3], "c.-",
-                 postIndexSet[4], posArrSet[4], "k.-",
-                 postIndexSet[5], posArrSet[5], "m.-")
+        plt.plot(posDensityData[0][0], posDensityData[1][0], "b.-", 
+                posDensityData[0][1], posDensityData[1][1], "r.-",
+                posDensityData[0][2], posDensityData[1][2], "g.-",
+                posDensityData[0][3], posDensityData[1][3], "c.-",
+                posDensityData[0][4], posDensityData[1][4], "k.-",
+                posDensityData[0][5], posDensityData[1][5], "m.-")
         plt.grid(True)
         plt.tick_params(axis='both', direction='in', length=3, pad=3)
         plt.title("Pos " + str(selectedNum))
@@ -101,6 +111,41 @@ class DataLoader:
         plt.show()
 
 
+    def printData(self, selectedNum):
+        if len(self.numberDataArray) == 0:
+            print("empty data")
+
+        data = self.numberDataArray[selectedNum]
+        densityData = data["density"]
+        posDensityData = data["pos"]
+        print("density " + str(densityData[1][len(densityData[1]) - 1]) + "%")
+        for i in range(6):
+            print("pos(" + str(i+1) + ") " +
+                   str(posDensityData[1][i][len(posDensityData[1]) - 1]))
+
+    
+    def loadAll(self):
+        for i in range(1, 46):
+            self.load(i)
+
+
+    def load(self, selectedNum):
+        fullArr = []
+        fullIndex = []
+        size = len(self.result) - 1
+        for i in range(size, -1, -1):
+            fIndex = self.findPosition(self.result.iloc[i,:], selectedNum)
+            fullArr.append(fIndex)
+            fullIndex.append(self.result.iloc[i,0])
+
+        fullData = [fullIndex, fullArr]
+        normalData = self.getNormalData(fullData)
+        densityData = self.getDensityData(fullData, 50)
+        posDensityData = self.getPositionDensityData(fullData, 300)
+
+        self.numberDataArray[selectedNum] = {"full":fullData, "normal":normalData, "density": densityData, "pos": posDensityData}
+
+
     def findPosition(self, arr, num):
         for i in range(1, len(arr)):
             if num == arr[i]:
@@ -108,5 +153,5 @@ class DataLoader:
                     return 0
                 return i
         return 0
-
+    
 
