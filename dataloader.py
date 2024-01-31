@@ -5,7 +5,7 @@ import os
 class DataLoader:
     def __init__(self):
         data = pd.read_csv("lottodata.csv", encoding="cp949")
-        self.result = data.iloc[:,0:8]
+        self.result = data.iloc[2:,:]
         self.numberDataArray = dict()
         print("init")
 
@@ -15,10 +15,10 @@ class DataLoader:
         index = []
         size = len(originArr[1])
         for i in range(size):
-            if originArr[1][i] == 0:
+            if originArr[1][i] == -1:
                 continue
             index.append(originArr[0][i])
-            arr.append(originArr[1][i])
+            arr.append(originArr[1][i] + 1)
         return [index, arr]
 
 
@@ -34,7 +34,7 @@ class DataLoader:
             end = int(i + halfSlidingSize)
             end = end if end < size else size
             for k in range(start, end):
-                if originArr[1][k] != 0:
+                if originArr[1][k] != -1:
                     if k < i:
                         acc += 1
                     else:
@@ -61,7 +61,7 @@ class DataLoader:
                 end = int(i + halfSlidingSize)
                 end = end if end < size else size
                 for k in range(start, end):
-                    if originArr[1][k] == p + 1:
+                    if originArr[1][k] == p:
                         acc += 1
 
                 posArr.append((acc * 100) / sildingSize)
@@ -87,11 +87,12 @@ class DataLoader:
         plt.tick_params(axis='both', direction='in', length=3, pad=3)
         plt.title("Confirm " + str(selectedNum))
 
+        densityDataSize = len(densityData[0]);
         plt.subplot(3, 1, 2)
         plt.plot(densityData[0], densityData[1], "b.-")
         plt.grid(True)
         plt.tick_params(axis='both', direction='in', length=3, pad=3)
-        plt.title("Density " + str(selectedNum))
+        plt.title("Density " + str(selectedNum) + " (" + str(densityData[1][densityDataSize-1]) + "%)")
 
         plt.subplot(3, 1, 3)
         plt.plot(posDensityData[0][0], posDensityData[1][0], "b.-", 
@@ -102,7 +103,7 @@ class DataLoader:
                 posDensityData[0][5], posDensityData[1][5], "m.-")
         plt.grid(True)
         plt.tick_params(axis='both', direction='in', length=3, pad=3)
-        plt.title("Pos " + str(selectedNum))
+        plt.title("Pos " + str(selectedNum) + " (B:1, R:2, G:3, C:4, K5, M6)")
 
         plt.tight_layout()
         if isSave:
@@ -123,6 +124,9 @@ class DataLoader:
 
 
     def printData(self, selectedNum):
+        print()
+        print("---------------------------------")
+
         if len(self.numberDataArray) == 0:
             print("empty data")
 
@@ -132,7 +136,31 @@ class DataLoader:
         print("density " + str(densityData[1][len(densityData[1]) - 1]) + "%")
         for i in range(6):
             print("pos(" + str(i+1) + ") " +
-                   str(posDensityData[1][i][len(posDensityData[1]) - 1]))
+                   str(posDensityData[1][i][len(posDensityData[1][i]) - 1]))
+        
+        print("---------------------------------")
+        print()
+
+    def printRating(self, position):
+        print()
+        print("---------------------------------")
+        print("# position " + str(position))
+        rateArray = []
+        for i in range(1, 46):
+            densityData = self.numberDataArray[i]["density"]
+            posData = self.numberDataArray[i]["pos"]
+            r1 = densityData[1][len(densityData[1]) - 1]
+            r2 = posData[1][position - 1][len(posData[1][position - 1]) - 1]
+            result = r1 + r2 if r2 > 0 else 0
+            rateArray.append([result, i])
+        rateArray.sort(key=lambda x: -(x[0]))
+        
+        for i in range(len(rateArray)):
+            data = rateArray[i]
+            print(" > " + str(data[1]) + " : " + str(round(data[0], 3)) + "%")
+        
+        print("---------------------------------")
+        print()
 
     
     def loadAll(self):
@@ -140,14 +168,21 @@ class DataLoader:
             self.load(i)
 
 
+    def getParsedArray(self, obj):
+        return [int(obj[0]), int(obj[1]), int(obj[2]),
+                int(obj[3]), int(obj[4]), int(obj[5]),
+                int(obj[6])]
+
+
     def load(self, selectedNum):
         fullArr = []
         fullIndex = []
         size = len(self.result) - 1
+
         for i in range(size, -1, -1):
-            fIndex = self.findPosition(self.result.iloc[i,:], selectedNum)
+            fIndex = self.findPosition(self.getParsedArray(self.result.iloc[i,13:20]), selectedNum)
             fullArr.append(fIndex)
-            fullIndex.append(self.result.iloc[i,0])
+            fullIndex.append(int(self.result.iloc[i,1]))
 
         fullData = [fullIndex, fullArr]
         normalData = self.getNormalData(fullData)
@@ -158,11 +193,11 @@ class DataLoader:
 
 
     def findPosition(self, arr, num):
-        for i in range(1, len(arr)):
+        for i in range(len(arr)):
             if num == arr[i]:
-                if i == 7:
-                    return 0
+                if i == 6:
+                    return -1
                 return i
-        return 0
+        return -1
     
 
